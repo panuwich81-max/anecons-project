@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANE CONS. - Project Construction Status Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Google Fonts (Prompt) -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Prompt', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <!-- Logo & Brand -->
+            <div class="flex items-center space-x-3">
+                <img src="Screenshot_2025-05-23_231309-removebg-preview.png" alt="ANE CONS Logo" class="h-12 w-auto object-contain">
+                <div>
+                    <h1 class="font-bold text-lg text-slate-900 leading-tight">ANE CONS.</h1>
+                    <p class="text-xs text-sky-600 font-medium tracking-wide">ENGINEERING & CONSTRUCTION</p>
+                </div>
+            </div>
+
+            <!-- Role Indicator & Action Button -->
+            <div class="flex items-center space-x-3">
+                <span id="roleBadge" class="px-3 py-1 text-xs font-semibold rounded-full bg-sky-100 text-sky-700 border border-sky-200">
+                    👁️ มุมมองลูกค้า (Client View)
+                </span>
+                <button onclick="toggleLoginModal()" id="loginBtn" class="bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-medium px-4 py-2 rounded-lg transition shadow-sm flex items-center gap-1.5">
+                    <span>🔐 ทีมงานเข้าสู่ระบบ</span>
+                </button>
+                <button onclick="logout()" id="logoutBtn" class="hidden bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs sm:text-sm font-medium px-3 py-2 rounded-lg transition border border-rose-200">
+                    ออกจากระบบ
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+
+        <!-- Project Hero Cover Section -->
+        <div id="projectHeroBg" class="bg-gradient-to-r from-slate-900 via-slate-800 to-sky-900 rounded-2xl text-white p-6 sm:p-10 shadow-xl mb-8 relative overflow-hidden bg-cover bg-center">
+            <div id="heroOverlay" class="absolute inset-0 bg-slate-950/70"></div>
+            <div class="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 bg-no-repeat bg-center pointer-events-none" style="background-image: url('Screenshot_2025-05-23_231309-removebg-preview.png');"></div>
+            <div class="relative z-10 max-w-3xl">
+                <div class="inline-flex items-center gap-2 bg-amber-500/20 border border-amber-400/30 text-amber-300 px-3 py-1 rounded-full text-xs font-semibold mb-4">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> โครงการใหม่ (New Project)
+                </div>
+                <h2 id="displayProjectName" class="text-2xl sm:text-4xl font-bold tracking-tight mb-3">ชื่อโครงการก่อสร้าง (เริ่มต้นโปรเจกต์)</h2>
+                <p id="displayProjectDesc" class="text-slate-300 text-sm sm:text-base mb-6 leading-relaxed">อัปเดตสถานะงานโครงสร้าง งานระบบ และงานสถาปัตยกรรมประจำวัน จัดทำโดยทีมงานวิศวกรมืออาชีพ ANE CONS.</p>
+                
+                <!-- Progress Bar Component -->
+                <div class="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10">
+                    <div class="flex justify-between text-sm mb-2 font-medium">
+                        <span class="text-slate-200">ความคืบหน้าภาพรวมโครงการ</span>
+                        <span id="displayProgressText" class="text-amber-400 font-bold text-base">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-700/60 rounded-full h-3 overflow-hidden p-0.5">
+                        <div id="displayProgressBar" class="bg-gradient-to-r from-amber-500 to-sky-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Control Panel (Hidden by default) -->
+        <div id="adminPanel" class="hidden mb-10 bg-amber-50 border-2 border-amber-300/60 rounded-2xl p-6 shadow-md space-y-6">
+            <div class="flex items-center justify-between pb-3 border-b border-amber-200">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">🛠️</span>
+                    <div>
+                        <h3 class="font-bold text-amber-900 text-lg">แผงควบคุมสำหรับทีมงาน (Admin Dashboard)</h3>
+                        <p class="text-xs text-amber-700">อัปเดตข้อมูลหน้าปก รายงานประจำวัน และสร้างอัลบั้มสื่อ</p>
+                    </div>
+                </div>
+                <span class="bg-amber-200 text-amber-800 text-xs font-bold px-3 py-1 rounded-full">Authorized Staff</span>
+            </div>
+
+            <!-- Form 1: Project Info & Cover Image Update -->
+            <form id="updateForm" onsubmit="saveProjectData(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-5 rounded-xl border border-amber-200">
+                <div class="md:col-span-2 font-bold text-sm text-slate-800 flex items-center gap-1">
+                    <span>📌</span> 1. แก้ไขข้อมูลภาพรวมและรูปภาพหน้าปก
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">ชื่อโครงการ</label>
+                    <input type="text" id="inputName" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">เปอร์เซ็นต์ความคืบหน้า (%)</label>
+                    <input type="number" id="inputProgress" min="0" max="100" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none" required>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">เปลี่ยนรูปภาพหน้าปกโปรเจ็ค (เลือกจากมือถือ)</label>
+                    <input type="file" id="inputCoverFile" accept="image/*" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-sm file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 outline-none">
+                </div>
+                <div class="md:col-span-2">
+                    <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-6 rounded-lg transition shadow-sm text-sm">
+                        💾 บันทึกข้อมูลภาพรวมและหน้าปก
+                    </button>
+                </div>
+            </form>
+
+            <!-- Form 2: Add Daily Status Log -->
+            <form id="statusLogForm" onsubmit="addDailyLog(event)" class="grid grid-cols-1 gap-4 bg-white p-5 rounded-xl border border-amber-200">
+                <div class="font-bold text-sm text-slate-800 flex items-center gap-1">
+                    <span>📋</span> 2. เพิ่มบันทึกรายงานหน้างานประจำวัน (ระบุวันที่อัตโนมัติ)
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">รายละเอียดสถานะงานล่าสุด</label>
+                    <textarea id="inputNewLog" rows="2" placeholder="เช่น เริ่มเข้าเคลียร์พื้นที่หน้างาน..." class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none" required></textarea>
+                </div>
+                <div>
+                    <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-lg transition shadow-sm text-sm">
+                        ➕ เพิ่มรายงานลงในประวัติ
+                    </button>
+                </div>
+            </form>
+
+            <!-- Form 3: Create New Album -->
+            <form id="createAlbumForm" onsubmit="createNewAlbum(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-5 rounded-xl border border-amber-200">
+                <div class="md:col-span-2 font-bold text-sm text-slate-800 flex items-center gap-1">
+                    <span>📁</span> 3. สร้างอัลบั้มใหม่
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">ชื่ออัลบั้มใหม่</label>
+                    <input type="text" id="newAlbumTitle" placeholder="เช่น อัลบั้มวันที่ 03-10-2026" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none" required>
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 px-4 rounded-lg transition shadow-sm text-sm">
+                        ➕ สร้างอัลบั้มใหม่
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Dashboard Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left 2 Columns: Daily Updates & Weekly Albums -->
+            <div class="lg:col-span-2 space-y-8">
+                
+                <!-- Latest Site Status Feed -->
+                <div class="bg-white rounded-2xl p-6 shadow-xs border border-slate-200">
+                    <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                        <span class="text-sky-600">📋</span> บันทึกรายงานหน้างานประจำวัน (เรียงตามลำดับเวลา)
+                    </h3>
+                    <div id="logsContainer" class="space-y-3">
+                        <!-- Dynamic Logs Injected Here -->
+                    </div>
+                </div>
+
+                <!-- Photo & Video Albums Section -->
+                <div class="bg-white rounded-2xl p-6 shadow-xs border border-slate-200">
+                    <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+                        <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <span class="text-amber-600">📸🎬</span> อัลบั้มรูปภาพและวิดีโอหน้างานทั้งหมด
+                        </h3>
+                    </div>
+                    
+                    <!-- Albums Container -->
+                    <div id="albumsContainer" class="space-y-6">
+                        <!-- Dynamic Albums Rendered Here -->
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Column: Project Info & Emergency Contacts -->
+            <div class="space-y-6">
+                
+                <!-- Emergency Contacts Box -->
+                <div class="bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-6 text-white shadow-lg">
+                    <h3 class="text-base font-bold mb-3 flex items-center gap-2">
+                        <span>🚨</span> เบอร์ติดต่อเร่งด่วน (ด่วนพิเศษ)
+                    </h3>
+                    <p class="text-xs text-amber-100 mb-4 leading-relaxed">หากมีข้อสงสัยเร่งด่วนหน้างาน สามารถติดต่อทีมผู้บริหารโครงการได้ทันที:</p>
+                    
+                    <div class="space-y-3">
+                        <!-- คุณอาชิ ขึ้นก่อน -->
+                        <a href="tel:0848585026" class="flex items-center justify-between bg-white/10 hover:bg-white/20 transition p-3 rounded-xl border border-white/20">
+                            <div>
+                                <p class="text-xs text-amber-200 font-medium">คุณอาชิ</p>
+                                <p class="text-sm font-bold tracking-wider">084-858-5026</p>
+                            </div>
+                            <span class="bg-white text-amber-700 p-2 rounded-lg text-xs font-bold shadow-xs">📞 โทร</span>
+                        </a>
+
+                        <!-- คุณต้น ตามลงมา -->
+                        <a href="tel:0984281430" class="flex items-center justify-between bg-white/10 hover:bg-white/20 transition p-3 rounded-xl border border-white/20">
+                            <div>
+                                <p class="text-xs text-amber-200 font-medium">คุณต้น</p>
+                                <p class="text-sm font-bold tracking-wider">098-428-1430</p>
+                            </div>
+                            <span class="bg-white text-amber-700 p-2 rounded-lg text-xs font-bold shadow-xs">📞 โทร</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Project Specs Box -->
+                <div class="bg-white rounded-2xl p-6 shadow-xs border border-slate-200">
+                    <h3 class="text-base font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100">ข้อมูลจำเพาะโครงการ</h3>
+                    <ul class="space-y-3 text-sm">
+                        <li class="flex justify-between">
+                            <span class="text-slate-500">ประเภทงาน:</span>
+                            <span class="font-medium text-slate-800">งานก่อสร้างและรีโนเวท</span>
+                        </li>
+                        <li class="flex justify-between">
+                            <span class="text-slate-500">บริษัทผู้รับเหมา:</span>
+                            <span class="font-bold text-sky-700">ANE CONS.</span>
+                        </li>
+                        <li class="flex justify-between">
+                            <span class="text-slate-500">มาตรฐานความปลอดภัย:</span>
+                            <span class="font-medium text-emerald-600">ควบคุมเข้มงวด (Safety First)</span>
+                        </li>
+                    </ul>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-16 py-6 text-center text-xs text-slate-400">
+        <p>&copy; 2026 ANE CONS. Engineering & Construction. All Rights Reserved.</p>
+    </footer>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 relative">
+            <button onclick="toggleLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 text-lg font-bold">&times;</button>
+            
+            <div class="text-center mb-6">
+                <img src="Screenshot_2025-05-23_231309-removebg-preview.png" alt="Logo" class="h-10 mx-auto mb-2 object-contain">
+                <h3 class="text-lg font-bold text-slate-900">เข้าสู่ระบบสำหรับทีมงาน</h3>
+                <p class="text-xs text-slate-500 mt-1">กรุณากรอกอีเมลและรหัสผ่านพนักงานเพื่อเข้าใช้งานระบบ</p>
+            </div>
+
+            <form onsubmit="handleStaffLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">อีเมลบริษัท (Company Email)</label>
+                    <input type="email" id="staffEmail" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-sky-500 outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">รหัสผ่านพนักงาน (Password)</label>
+                    <input type="password" id="staffPassword" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-sky-500 outline-none" required>
+                </div>
+                <div id="loginError" class="text-xs text-rose-600 font-medium hidden"></div>
+                <button type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 rounded-lg transition shadow-sm text-sm">
+                    เข้าสู่ระบบหลังบ้าน
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lightbox Modal with Next/Prev Slider Navigation -->
+    <div id="lightboxModal" class="fixed inset-0 bg-black/95 hidden z-50 flex items-center justify-center p-4">
+        <button onclick="closeLightbox()" class="absolute top-6 right-6 text-white text-3xl font-bold hover:text-amber-400 transition z-50">&times;</button>
+        <button onclick="prevLightboxMedia()" class="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-white/10 hover:bg-white/20 p-3 rounded-full text-2xl font-bold transition z-50">&#10094;</button>
+        <button onclick="nextLightboxMedia()" class="absolute right-4 top-1/2 -translate-y-1/2 text-white bg-white/10 hover:bg-white/20 p-3 rounded-full text-2xl font-bold transition z-50">&#10095;</button>
+        
+        <div class="max-w-5xl max-h-[85vh] flex items-center justify-center">
+            <div id="lightboxContent" class="w-full flex items-center justify-center">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        const authorizedStaffEmails = [
+            "ton@anecons.com",
+            "achi@anecons.com",
+            "misbah@anecons.com"
+        ];
+        const sharedPassword = "anecons.";
+
+        let currentLightboxAlbumMedia = [];
+        let currentLightboxIndex = 0;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            let savedData = localStorage.getItem('ane_project_data');
+            if (!savedData) {
+                const freshProjectData = {
+                    name: "ชื่อโครงการก่อสร้าง (เริ่มต้นโปรเจกต์)",
+                    progress: 0,
+                    coverImg: "",
+                    albums: [],
+                    logs: []
+                };
+                localStorage.setItem('ane_project_data', JSON.stringify(freshProjectData));
+            }
+
+            loadSavedData();
+            const isStaff = localStorage.getItem('ane_is_staff') === 'true';
+            if (isStaff) {
+                enableAdminMode();
+            }
+        });
+
+        function toggleLoginModal() {
+            document.getElementById('loginModal').classList.toggle('hidden');
+        }
+
+        function handleStaffLogin(e) {
+            e.preventDefault();
+            const emailInput = document.getElementById('staffEmail').value.trim().toLowerCase();
+            const passwordInput = document.getElementById('staffPassword').value;
+            const errorBox = document.getElementById('loginError');
+
+            const isEmailAllowed = authorizedStaffEmails.includes(emailInput);
+            const isPasswordCorrect = (passwordInput === sharedPassword);
+
+            if (isEmailAllowed && isPasswordCorrect) {
+                localStorage.setItem('ane_is_staff', 'true');
+                localStorage.setItem('ane_staff_email', emailInput);
+                toggleLoginModal();
+                enableAdminMode();
+                errorBox.classList.add('hidden');
+                document.getElementById('staffPassword').value = '';
+            } else {
+                errorBox.textContent = '❌ เข้าสู่ระบบไม่สำเร็จ: อีเมลไม่อยู่ในรายชื่อที่ได้รับสิทธิ์ หรือรหัสผ่านไม่ถูกต้อง';
+                errorBox.classList.remove('hidden');
+            }
+        }
+
+        function enableAdminMode() {
+            document.getElementById('adminPanel').classList.remove('hidden');
+            document.getElementById('roleBadge').className = 'px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200';
+            document.getElementById('roleBadge').innerHTML = '🛠️ มุมมองทีมงาน (Admin Mode)';
+            document.getElementById('loginBtn').classList.add('hidden');
+            document.getElementById('logoutBtn').classList.remove('hidden');
+        }
+
+        function logout() {
+            localStorage.removeItem('ane_is_staff');
+            localStorage.removeItem('ane_staff_email');
+            window.location.reload();
+        }
+
+        function saveProjectData(e) {
+            e.preventDefault();
+            const name = document.getElementById('inputName').value;
+            const progress = document.getElementById('inputProgress').value;
+            const coverFileInput = document.getElementById('inputCoverFile');
+
+            let projectData = JSON.parse(localStorage.getItem('ane_project_data') || '{}');
+            projectData.name = name;
+            projectData.progress = progress;
+
+            if (coverFileInput.files && coverFileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    projectData.coverImg = event.target.result;
+                    localStorage.setItem('ane_project_data', JSON.stringify(projectData));
+                    alert('บันทึกข้อมูลและเปลี่ยนรูปหน้าปกเรียบร้อยแล้ว!');
+                    loadSavedData();
+                };
+                reader.readAsDataURL(coverFileInput.files[0]);
+            } else {
+                localStorage.setItem('ane_project_data', JSON.stringify(projectData));
+                alert('บันทึกข้อมูลภาพรวมเรียบร้อยแล้ว!');
+                loadSavedData();
+            }
+        }
+
+        function addDailyLog(e) {
+            e.preventDefault();
+            const logTextInput = document.getElementById('inputNewLog');
+            const text = logTextInput.value.trim();
+            if (!text) return;
+
+            const now = new Date();
+            const dd = String(now.getDate()).padStart(2, '0');
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const yyyy = now.getFullYear();
+            const currentDate = `${dd}-${mm}-${yyyy}`;
+
+            let projectData = JSON.parse(localStorage.getItem('ane_project_data') || '{}');
+            if (!projectData.logs) {
+                projectData.logs = [];
+            }
+
+            projectData.logs.unshift({ date: currentDate, text: text });
+            localStorage.setItem('ane_project_data', JSON.stringify(projectData));
+            logTextInput.value = '';
+            alert('เพิ่มรายงานประจำวันเรียบร้อยแล้ว!');
+            loadSavedData();
+        }
+
+        function createNewAlbum(e) {
+            e.preventDefault();
+            const titleInput = document.getElementById('newAlbumTitle');
+            const title = titleInput.value.trim();
+            if (!title) return;
+
+            let projectData = JSON.parse(localStorage.getItem('ane_project_data') || '{"albums": []}');
+            if (!projectData.albums) {
+                projectData.albums = [];
+            }
+
+            const newAlbum = {
+                id: 'album_' + Date.now(),
+                week: title,
+                media: []
+            };
+
+            projectData.albums.unshift(newAlbum);
+            localStorage.setItem('ane_project_data', JSON.stringify(projectData));
+            titleInput.value = '';
+            alert('สร้างอัลบั้มใหม่เรียบร้อยแล้ว!');
+            loadSavedData();
+        }
+
+        function deleteAlbum(albumId) {
+            if (!confirm('คุณต้องการลบอัลบั้มนี้ใช่หรือไม่? ข้อมูลทั้งหมดในอัลบั้มจะถูกลบออก')) {
+                return;
+            }
+
+            let projectData = JSON.parse(localStorage.getItem('ane_project_data'));
+            if (!projectData || !projectData.albums) return;
+
+            projectData.albums = projectData.albums.filter(a => a.id !== albumId);
+            localStorage.setItem('ane_project_data', JSON.stringify(projectData));
+            loadSavedData();
+            alert('ลบอัลบั้มเรียบร้อยแล้ว!');
+        }
+
+        function deleteMediaItem(albumId, mediaIndex, event) {
+            event.stopPropagation();
+            if (!confirm('คุณต้องการลบรูปภาพ/วิดีโอนี้ออกจากอัลบั้มใช่หรือไม่?')) {
+                return;
+            }
+
+            let projectData = JSON.parse(localStorage.getItem('ane_project_data'));
+            if (!projectData || !projectData.albums) return;
+
+            let targetAlbum = projectData.albums.find(a => a.id === albumId);
+            if (targetAlbum && targetAlbum.media) {
+                targetAlbum.media.splice(mediaIndex, 1);
+                localStorage.setItem('ane_project_data', JSON.stringify(projectData));
+                loadSavedData();
+                alert('ลบสื่อเรียบร้อยแล้ว!');
+            }
+        }
+
+        function uploadMediaToAlbum(albumId, event) {
+            const files = event.target.files;
+            if (files.length === 0) return;
+
+            let projectData = JSON.parse(localStorage.getItem('ane_project_data') || '{"albums": []}');
+            if (!projectData.albums) {
+                projectData.albums = [];
+            }
+
+            let targetAlbum = projectData.albums.find(a => a.id === albumId);
+            if (!targetAlbum) return;
+
+            if (!targetAlbum.media) {
+                targetAlbum.media = [];
+            }
+
+            const totalFiles = files.length;
+            let processedCount = 0;
+
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const fileType = file.type.startsWith('video') ? 'video' : 'image';
+                    targetAlbum.media.push({ type: fileType, url: e.target.result });
+                    processedCount++;
+
+                    if (processedCount === totalFiles) {
+                        localStorage.setItem('ane_project_data', JSON.stringify(projectData));
+                        loadSavedData();
+                        alert(`อัปโหลดสำเร็จ ${totalFiles} ไฟล์เข้าสู่อัลบั้มเรียบร้อย!`);
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function openLightboxByAlbum(albumId, mediaIndex) {
+            let projectData = JSON.parse(localStorage.getItem('ane_project_data'));
+            let targetAlbum = projectData.albums.find(a => a.id === albumId);
+            if (!targetAlbum || !targetAlbum.media) return;
+
+            currentLightboxAlbumMedia = targetAlbum.media;
+            currentLightboxIndex = mediaIndex;
+            renderLightboxCurrent();
+            document.getElementById('lightboxModal').classList.remove('hidden');
+        }
+
+        function renderLightboxCurrent() {
+            const content = document.getElementById('lightboxContent');
+            const item = currentLightboxAlbumMedia[currentLightboxIndex];
+
+            if (item.type === 'video') {
+                content.innerHTML = `<video controls autoplay class="max-w-full max-h-[85vh] rounded-lg shadow-2xl"><source src="${item.url}" type="video/mp4">เบราว์เซอร์ของคุณไม่รองรับการเล่นวิดีโอ</video>`;
+            } else {
+                content.innerHTML = `<img src="${item.url}" alt="Fullscreen Preview" class="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl">`;
+            }
+        }
+
+        function nextLightboxMedia() {
+            if (currentLightboxAlbumMedia.length === 0) return;
+            currentLightboxIndex = (currentLightboxIndex + 1) % currentLightboxAlbumMedia.length;
+            renderLightboxCurrent();
+        }
+
+        function prevLightboxMedia() {
+            if (currentLightboxAlbumMedia.length === 0) return;
+            currentLightboxIndex = (currentLightboxIndex - 1 + currentLightboxAlbumMedia.length) % currentLightboxAlbumMedia.length;
+            renderLightboxCurrent();
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightboxModal').classList.add('hidden');
+            document.getElementById('lightboxContent').innerHTML = '';
+        }
+
+        function loadSavedData() {
+            let projectData = JSON.parse(localStorage.getItem('ane_project_data'));
+            if (!projectData) {
+                projectData = {
+                    name: "ชื่อโครงการก่อสร้าง (เริ่มต้นโปรเจกต์)",
+                    progress: 0,
+                    albums: [],
+                    logs: [],
+                    coverImg: ""
+                };
+                localStorage.setItem('ane_project_data', JSON.stringify(projectData));
+            }
+
+            document.getElementById('displayProjectName').textContent = projectData.name;
+            document.getElementById('displayProgressText').textContent = projectData.progress + '%';
+            document.getElementById('displayProgressBar').style.width = projectData.progress + '%';
+
+            const heroBg = document.getElementById('projectHeroBg');
+            const heroOverlay = document.getElementById('heroOverlay');
+            if (projectData.coverImg) {
+                heroBg.style.backgroundImage = `url('${projectData.coverImg}')`;
+                heroOverlay.classList.remove('bg-slate-950/70');
+                heroOverlay.classList.add('bg-slate-950/60');
+            } else {
+                heroBg.style.backgroundImage = '';
+                heroOverlay.classList.remove('bg-slate-950/60');
+                heroOverlay.classList.add('bg-slate-950/70');
+            }
+
+            document.getElementById('inputName').value = projectData.name;
+            document.getElementById('inputProgress').value = projectData.progress;
+
+            // แสดงผลรายงานหน้างานประจำวัน
+            const logsContainer = document.getElementById('logsContainer');
+            logsContainer.innerHTML = '';
+            const logs = projectData.logs || [];
+
+            if (logs.length === 0) {
+                logsContainer.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-4">ยังไม่มีบันทึกรายงานหน้างานในระบบ</p>`;
+            } else {
+                logs.forEach(log => {
+                    logsContainer.innerHTML += `
+                        <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="text-xs font-semibold text-sky-600 bg-sky-50 px-2.5 py-1 rounded-md">อัปเดตสถานะ</span>
+                                <span class="text-xs font-medium text-slate-500">📅 ${log.date}</span>
+                            </div>
+                            <p class="text-sm text-slate-700 leading-relaxed">${log.text}</p>
+                        </div>
+                    `;
+                });
+            }
+
+            // แสดงผลอัลบั้ม
+            const albumsContainer = document.getElementById('albumsContainer');
+            albumsContainer.innerHTML = '';
+
+            const isStaff = localStorage.getItem('ane_is_staff') === 'true';
+            const albums = projectData.albums || [];
+
+            if (albums.length === 0) {
+                albumsContainer.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-6">ยังไม่มีอัลบั้มรูปภาพหรือวิดีโอในระบบ</p>`;
+                return;
+            }
+
+            albums.forEach((album) => {
+                let mediaHTML = '';
+                if (album.media && album.media.length > 0) {
+                    album.media.forEach((item, index) => {
+                        let deleteBtnHTML = '';
+                        if (isStaff) {
+                            deleteBtnHTML = `
+                                <button onclick="deleteMediaItem('${album.id}', ${index}, event)" class="absolute top-2 right-2 bg-rose-600 hover:bg-rose-700 text-white w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center shadow transition z-10" title="ลบไฟล์นี้">
+                                    &times;
+                                </button>
+                            `;
+                        }
+
+                        if (item.type === 'video') {
+                            mediaHTML += `
+                                <div class="overflow-hidden rounded-xl border border-slate-200 bg-slate-900 group shadow-xs cursor-pointer relative" onclick="openLightboxByAlbum('${album.id}', ${index})">
+                                    ${deleteBtnHTML}
+                                    <video class="w-full h-40 object-cover pointer-events-none">
+                                        <source src="${item.url}" type="video/mp4">
+                                    </video>
+                                    <div class="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/10 transition">
+                                        <span class="bg-white/80 text-slate-900 px-3 py-1 rounded-full text-xs font-bold shadow">▶ เล่นวิดีโอ</span>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            mediaHTML += `
+                                <div class="overflow-hidden rounded-xl border border-slate-200 bg-slate-100 group shadow-xs cursor-pointer relative" onclick="openLightboxByAlbum('${album.id}', ${index})">
+                                    ${deleteBtnHTML}
+                                    <img src="${item.url}" alt="Site Progress" class="w-full h-40 object-cover group-hover:scale-105 transition duration-300">
+                                </div>
+                            `;
+                        }
+                    });
+                } else {
+                    mediaHTML = `<p class="text-xs text-slate-400 col-span-full italic">ยังไม่มีรูปภาพหรือวิดีโอในอัลบั้มนี้</p>`;
+                }
+
+                let staffActionsHTML = '';
+                if (isStaff) {
+                    staffActionsHTML = `
+                        <div class="flex items-center gap-2">
+                            <label class="cursor-pointer bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+                                <span>📷🎬 + เพิ่มรูป/วิดีโอ</span>
+                                <input type="file" accept="image/*,video/*" multiple class="hidden" onchange="uploadMediaToAlbum('${album.id}', event)">
+                            </label>
+                            <button onclick="deleteAlbum('${album.id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-semibold px-3 py-1.5 rounded-lg transition">
+                                🗑️ ลบอัลบั้ม
+                            </button>
+                        </div>
+                    `;
+                }
+
+                let albumCard = `
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3 pb-2 border-b border-slate-200">
+                            <h4 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-sky-500"></span> ${album.week}
+                            </h4>
+                            ${staffActionsHTML}
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                            ${mediaHTML}
+                        </div>
+                    </div>
+                `;
+                albumsContainer.innerHTML += albumCard;
+            });
+        }
+    </script>
+</body>
+</html>
